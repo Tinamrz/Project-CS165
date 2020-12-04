@@ -32,11 +32,11 @@
 #include <unistd.h>
 
 
-helooooooo
+
 static void usage()
 {
 	extern char * __progname;
-	fprintf(stderr, "usage: %s ipaddress portnumber\n", __progname);
+	fprintf(stderr, "usage: %s ipaddress portnumber object\n", __progname);
 	exit(1);
 }
 
@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 	u_long p;
 	int sd;
 
-	if (argc != 3)
+	if (argc != 4)
 		usage();
 
         p = strtoul(argv[2], &ep, 10);
