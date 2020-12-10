@@ -54,20 +54,23 @@ if ((errno == ERANGE && p == ULONG_MAX) || (p > USHRT_MAX)) {
 }
 /* now safe to do this */
 port = p;
-
+const int SIZE = 6;
+const char *proxyname[SIZE];
+proxyname[0] = "P1";proxyname[1] = "P2";proxyname[2] = "P3";proxyname[3] = "P4";proxyname[4] = "P5";proxyname[5] = "P6";
 /// my code: hrw hash
 uint32_t hash[4];                // Output for the hash
 uint32_t seed = 42;              // Seed value for hash
-largest=MurmurHash3_x86_32(strcat(argv[4],proxyname), strlen(strcat(argv[4],proxyname)), seed, hash);  //concatentaing and calculating hash
-for (i = 1; i < sizeof(proxysize); i++)
+largest=MurmurHash3_x86_32(strcat(argv[4],proxyname[0]), strlen(strcat(argv[4],proxyname[0])), seed, hash);  //concatentaing and calculating hash
+for (i = 1; i < SIZE; i++)
 {
-if (largest < hash[i])
-largest = hash[i];
-    }//determining which proxy to ask     cache:https://github.com/sonertari/SSLproxy/blob/master/src/cache.c
+if (largest < MurmurHash3_x86_32(strcat(argv[4],proxyname[i]), strlen(strcat(argv[4],proxyname[i])), seed, hash);)
+largest = MurmurHash3_x86_32(strcat(argv[4],proxyname[i]), strlen(strcat(argv[4],proxyname[i])), seed, hash);
+    }//determining which proxy to ask    
+    //cache:https://github.com/sonertari/SSLproxy/blob/master/src/cache.c
 //TLS handshake with the proxy    https://aticleworld.com/ssl-server-client-using-openssl-in-c/
 
 SSL_library_init();
-portnum = argv[3];
+portnum = largest;
 ctx = InitServerCTX();        /* initialize SSL */
 LoadCertificates(ctx, "mycert.pem", "mycert.pem"); /* load certs */
 proxy = OpenListener(atoi(portnum));    /* create proxy socket */
