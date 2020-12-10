@@ -65,7 +65,7 @@ for (i = 1; i < SIZE; i++)
 {
 if (largest < MurmurHash3_x86_32(strcat(argv[4],proxyname[i]), strlen(strcat(argv[4],proxyname[i])), seed, hash);)
 largest = MurmurHash3_x86_32(strcat(argv[4],proxyname[i]), strlen(strcat(argv[4],proxyname[i])), seed, hash);
-    }//determining which proxy to ask    
+    }//determining which proxy to ask   (the highest hashed value)  
     //cache:https://github.com/sonertari/SSLproxy/blob/master/src/cache.c
 //TLS handshake with the proxy    https://aticleworld.com/ssl-server-client-using-openssl-in-c/
 
