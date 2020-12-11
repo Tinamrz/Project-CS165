@@ -104,13 +104,13 @@ int main(int argc,  char *argv[])
 	file = tls_read(tls_cctx, buffer,200);
 	
 	//Now that we have the file name, it is time to search the bloom filter
-	//for inserting the Bloom values
-	
+
+	//Bloom query in this bloom filter function is using different hash functions including murmurhash
 	if(bloom_query(bloom, buffer)){
 		
 	printf("sending contents of %s to the client\n", buffer);
 	boolCache = 1;
-		
+	//for inserting the Bloom values
 	filter.insert(bloom,buffer);
 		
 	strncpy(buffer,buffer,sizeof(buffer));
@@ -121,7 +121,7 @@ int main(int argc,  char *argv[])
 	else{
 		
 		
-	// Now to connect to server to get the object
+	// Now to connect to server to get the object as the object was not found in the cache
 	if((tls_scfg = tls_config_new()) == NULL)
 				errx(1 ," unable to allocate TLS config");
 		
