@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <tls.h>
 #include <unistd.h>
 //your application name -port portnumber -servername:serverportnumber
 static void usage()
@@ -59,4 +60,12 @@ int main(int argc,  char *argv[])
 	}
 	/* now safe to do this */
 	port = p;
+	
+	// Kramer: Similarly to the server code, we need to set up a tls. The proxy acts as a middle-man in-between 
+	// the server and the client, acting as a "server of the server" if you will.
+	
+	struct tls_config *serverConfigTLS = tls_config_new();
+	struct tls_config *clientConfigTLS = NULL;
+	
+	// Kramer: We need to make two TLS connections - one for the server and one for the client.
 	
