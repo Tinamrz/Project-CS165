@@ -25,7 +25,7 @@ static void usage()
     fprintf(stderr, "usage: %s ipaddress portnumber proxyportnumber object\n", __progname);
     exit(1);
 }
-
+int proxyAddr[6] = {9993,9994,9995,9996,9997,9998};
 int main(int argc, char *argv[])
 {
     struct sockaddr_in server_sa;
