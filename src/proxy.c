@@ -12,6 +12,7 @@
 #include <string.h>
 #include <tls.h>
 #include <unistd.h>
+#include "murmur3.h"
 //your application name -port portnumber -servername:serverportnumber
 static void usage()
 {
@@ -60,6 +61,11 @@ int main(int argc,  char *argv[])
 	}
 	/* now safe to do this */
 	port = p;
+	//murmur hashing
+	uint32_t hash[4];                // Output for the hash
+	uint32_t seed = 42;              // Seed value for hash
+	MurmurHash3_x86_32(strcat(argv[4],proxyname), strlen(strcat(argv[4],proxyname)), seed, hash);
+	
 	
 	// Kramer: Similarly to the server code, we need to set up a tls. The proxy acts as a middle-man in-between 
 	// the server and the client, acting as a "server of the server" if you will.
