@@ -85,6 +85,8 @@ int main(int argc,  char *argv[])
 	unsigned int Cache = 0;
 	i = 0;
 	//we need to set up a tls. The proxy acts as a middle-man in-between the server and the client.
+	if ((tls_cfg = tls_config_new()) == NULL)
+		errx(1, "unable to allocate TLS config")
 	if (tls_accept_socket(tls_ctx, &tls_cctx, clientsd) == -1)
 	errx(1, "Acception by TLS failed %s", tls_error(tls_ctx));
 	else {
@@ -98,7 +100,10 @@ int main(int argc,  char *argv[])
 	ssize_t file;
 	file = tls_read(tls_cctx, buffer,200);
 	//Now that we have the file name, it is time to search the bloom filter
-	filter.insert(str_list[i]);
-
 	//for inserting the Bloom values
+	filter.insert(bloom,buffer);
+	if(boolCache == 1){
+	printf("IN CACHE Proxy sent: contents of %s\n\n",buffer);
+	}  
+
 	
