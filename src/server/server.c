@@ -36,7 +36,7 @@ int main(int argc,  char *argv[])
 	char buffer[80], *ep;
 	struct sigaction sa;
 	int sd;
-	socklen_t clientlen;
+	socklen_t proxylen;
 	u_short port;
 	pid_t pid;
 	u_long p;
@@ -68,7 +68,7 @@ int main(int argc,  char *argv[])
 	port = p;
 	
 	// Kramer: We aren't required to send this. Disable it for now.
-	/* the message we send the client
+	/* the message we send the proxy
 	strlcpy(buffer,
 	    "What is the air speed velocity of a coconut laden swallow?\n",
 	    sizeof(buffer));
@@ -84,12 +84,12 @@ int main(int argc,  char *argv[])
 	tls_config_set_ca_file(configurationTLS, "root.pem");
 	
 	// Bob Beck's libTLS tutorial: Optionally Call tls_config_set_cert_file to add your own certificate.
-	// A server will normally do this. Clients may not if they are connecting without client authentication.
+	// A server will normally do this. Proxies may not if they are connecting without proxy authentication.
 	
 	tls_config_set_cert_file(configurationTLS, "server.crt");
 	
 	// Bob Beck's libTLS tutorial: Optionally Call tls_config_set_key_file to add your certificate key.
-	// A server will normally do this. Clients may not if they are connecting without client authentication.
+	// A server will normally do this. Proxies may not if they are connecting without proxy authentication.
 	
 	tls_config_set_key_file(configurationTLS, "server.key");
 	
@@ -100,7 +100,7 @@ int main(int argc,  char *argv[])
 	struct tls *serverTLS = tls_server();
 	
 	// Bob Beck's libTLS tutorial: Once you have this you apply a configuration to a context using
-	// tls_configure to take your server or client context, and apply the configuration to it.
+	// tls_configure to take your server or proxy context, and apply the configuration to it.
 	
 	tls_configure(serverTLS, configurationTLS);
 	
@@ -127,7 +127,7 @@ int main(int argc,  char *argv[])
 	/*
 	 * we're now bound, and listening for connections on "sd" -
 	 * each call to "accept" will return us a descriptor talking to
-	 * a connected client
+	 * a connected proxy
 	 */
 
 
@@ -153,16 +153,16 @@ int main(int argc,  char *argv[])
 	printf("Server up and listening for connections on port %u\n", port);
 	for(;;) 
 	{
-		int clientsd;
-		clientlen = sizeof(&client);
-		clientsd = accept(sd, (struct sockaddr *)&client, &clientlen);
-		if (clientsd == -1)
+		int proxysd;
+		proxylen = sizeof(&proxy);
+		proxysd = accept(sd, (struct sockaddr *)&proxy, &proxylen);
+		if (proxysd == -1)
 		{
 			err(1, "accept failed");
 		}
 		/*
 		 * We fork child to deal with each connection, this way more
-		 * than one client can connect to us and get served at any one
+		 * than one proxy can connect to us and get served at any one
 		 * time.
 		 */
 
@@ -180,11 +180,11 @@ int main(int argc,  char *argv[])
 			
 			// Kramer: I think this is the right place to implement?
 			
-			// Kramer: Implementation needs a client TLS connection, so put a null one in for now?
+			// Kramer: Implementation needs a proxy TLS connection, so put a null one in for now?
 			
-			struct tls *clientTLS = NULL;
+			struct tls *proxyTLS = NULL;
 			
-			tls_accept_socket(serverTLS, &clientTLS, clientsd);
+			tls_accept_socket(serverTLS, &proxyTLS, proxysd);
 			
 			// Bob Beck's libTLS tutorial: Sending and receiving of data is done with tls_read and tls_write.
 			// They are designed to be similar in use, and familiar to programmers that have experience 
@@ -203,7 +203,7 @@ int main(int argc,  char *argv[])
 			// repeating the command in a loop.
 			while(i < bufferSize)
 			{
-				i = tls_read(clientTLS, buffer + j, buffer - j);
+				i = tls_read(proxyTLS, buffer + j, buffer - j);
 				
 				// Bob Beck's libTLS tutorial: as long as it returns TLS_WANT_POLLIN or TLS_WANT_POLLOUT
 				if(i != TLS_WANT_POLLIN && i != TLS_WANT_POLLOUT)
@@ -213,7 +213,7 @@ int main(int argc,  char *argv[])
 			}
 			
 			/*
-			 * write the message to the client, being sure to
+			 * write the message to the proxy, being sure to
 			 * handle a short write, or being interrupted by
 			 * a signal before we could write anything.
 			 */
@@ -222,8 +222,8 @@ int main(int argc,  char *argv[])
 			// Kramer: Replace writing function with tls_write instead?
 			while (written < strlen(buffer))
 			{
-				//w = write(clientsd, buffer + written, strlen(buffer) - written);
-				w = tls_write(clientTLS, buffer + written, strlen(buffer) - written);
+				//w = write(proxysd, buffer + written, strlen(buffer) - written);
+				w = tls_write(proxyTLS, buffer + written, strlen(buffer) - written);
 				if (w == -1)
 				{
 					err(1, "write failed");
@@ -238,15 +238,15 @@ int main(int argc,  char *argv[])
 			// when it is finished. this does not close the underlying file descriptor, so you 
 			// keep your old code to close the underlying socket when it is done.
 			
-			// Kramer: Closing all client connections that had TLS_WANT_POLLIN and TLS_WANT_POLLOUT?
+			// Kramer: Closing all proxy connections that had TLS_WANT_POLLIN and TLS_WANT_POLLOUT?
 			int k = 0;
 			while(i == TLS_WANT_POLLIN || i == TLS_WANT_POLLOUT)
 			{
-				k = tls_close(clientTLS);	
+				k = tls_close(proxyTLS);	
 			}
-			close(clientsd);
+			close(proxysd);
 			exit(0);
 		}
-		close(clientsd);
+		close(proxysd);
 	}
 }
