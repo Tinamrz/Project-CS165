@@ -58,15 +58,17 @@ const int SIZE = 6;
 const char *proxyname[SIZE];
 proxyname[0] = "P1";proxyname[1] = "P2";proxyname[2] = "P3";proxyname[3] = "P4";proxyname[4] = "P5";proxyname[5] = "P6";
 /// my code: hrw hash
-uint32_t hash[4];                // Output for the hash
-uint32_t seed = 42;              // Seed value for hash
-largest=MurmurHash3_x86_32(strcat(argv[4],proxyname[0]), strlen(strcat(argv[4],proxyname[0])), seed, hash);  //concatentaing and calculating hash
+uint32_t largest[4];                // Output for the hash
+uint32_t seed = 42;  // Seed value for hash
+uint32_t temp_largest[4];  //to compare all the hash value and chose the highest one
+MurmurHash3_x86_32(strcat(argv[4],proxyname[0]), strlen(strcat(argv[4],proxyname[0])), seed, largest);  //concatentaing and calculating hash and output the hash value in largest
 for (i = 1; i < SIZE; i++)
-{
-if (largest < MurmurHash3_x86_32(strcat(argv[4],proxyname[i]), strlen(strcat(argv[4],proxyname[i])), seed, hash);)
-largest = MurmurHash3_x86_32(strcat(argv[4],proxyname[i]), strlen(strcat(argv[4],proxyname[i])), seed, hash);
+{MurmurHash3_x86_32(strcat(argv[4],proxyname[i]), strlen(strcat(argv[4],proxyname[i])), seed, temp_largest)
+if (largest < temp_largest;)
+largest=temp_largest
     }//determining which proxy to ask   (the highest hashed value)  
-    //cache:https://github.com/sonertari/SSLproxy/blob/master/src/cache.c
+    
+   
 //TLS handshake with the proxy    https://aticleworld.com/ssl-server-client-using-openssl-in-c/
 
 SSL_library_init();
