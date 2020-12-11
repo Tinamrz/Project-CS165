@@ -15,6 +15,7 @@
 
 // Kramer: Adding the TLS Library on line 13.
 // Alphabetical order makes Kramer happy.
+// Proper code block formatting makes Kramer happy too.
 
 static void usage()
 {
@@ -49,12 +50,14 @@ int main(int argc,  char *argv[])
 		usage();
 		errno = 0;
         p = strtoul(argv[1], &ep, 10);
-        if (*argv[1] == '\0' || *ep != '\0') {
+        if (*argv[1] == '\0' || *ep != '\0')
+	{
 		/* parameter wasn't a number, or was empty */
 		fprintf(stderr, "%s - not a number\n", argv[1]);
 		usage();
 	}
-        if ((errno == ERANGE && p == ULONG_MAX) || (p > USHRT_MAX)) {
+        if ((errno == ERANGE && p == ULONG_MAX) || (p > USHRT_MAX))
+	{
 		/* It's a number, but it either can't fit in an unsigned
 		 * long, or is too big for an unsigned short
 		 */
@@ -110,14 +113,17 @@ int main(int argc,  char *argv[])
 	sockname.sin_addr.s_addr = htonl(INADDR_ANY);
 	sd=socket(AF_INET,SOCK_STREAM,0);
 	if ( sd == -1)
+	{
 		err(1, "socket failed");
-
+	}
 	if (bind(sd, (struct sockaddr *) &sockname, sizeof(sockname)) == -1)
+	{
 		err(1, "bind failed");
-
+	}
 	if (listen(sd,3) == -1)
+	{
 		err(1, "listen failed");
-
+	}
 	/*
 	 * we're now bound, and listening for connections on "sd" -
 	 * each call to "accept" will return us a descriptor talking to
@@ -138,18 +144,22 @@ int main(int argc,  char *argv[])
 	 */
         sa.sa_flags = SA_RESTART;
         if (sigaction(SIGCHLD, &sa, NULL) == -1)
+	{
                 err(1, "sigaction failed");
-
+	}
 	/*
 	 * finally - the main loop.  accept connections and deal with 'em
 	 */
 	printf("Server up and listening for connections on port %u\n", port);
-	for(;;) {
+	for(;;) 
+	{
 		int clientsd;
 		clientlen = sizeof(&client);
 		clientsd = accept(sd, (struct sockaddr *)&client, &clientlen);
 		if (clientsd == -1)
+		{
 			err(1, "accept failed");
+		}
 		/*
 		 * We fork child to deal with each connection, this way more
 		 * than one client can connect to us and get served at any one
@@ -158,9 +168,11 @@ int main(int argc,  char *argv[])
 
 		pid = fork();
 		if (pid == -1)
+		{
 		     err(1, "fork failed");
-
-		if(pid == 0) {
+		}
+		if(pid == 0)
+		{
 			ssize_t written, w;
 			
 			// Bob Beck's libTLS tutorial: In a server, after you call accept, you call
@@ -178,6 +190,28 @@ int main(int argc,  char *argv[])
 			// They are designed to be similar in use, and familiar to programmers that have experience 
 			// with the normal POSIX read and write system calls.
 			
+			// Kramer: Data isn't linear, so switching to a while loop.
+			//for(int i = 0; i => sizeof(buffer); i++)
+			// Kramer: We need to read the data from the buffer and traverse through it.
+			// Kramer: Since it's an array, subtract one to be correct. :-)
+			size_t bufferSize = sizeof(buffer)-1;
+			int i = 0;
+			int j = 0;
+			
+			// Bob Beck's libTLS tutorial: For the synchronous IO case, 
+			// the typical use pattern is straightforward, and involves
+			// repeating the command in a loop.
+			while(i < bufferSize)
+			{
+				i = tls_read(clientTLS, buffer + j, buffer - j);
+				
+				// Bob Beck's libTLS tutorial: as long as it returns TLS_WANT_POLLIN or TLS_WANT_POLLOUT
+				if(i != TLS_WANT_POLLIN && i != TLS_WANT_POLLOUT)
+				{
+					j = j + i;
+				}
+			}
+			
 			/*
 			 * write the message to the client, being sure to
 			 * handle a short write, or being interrupted by
@@ -185,15 +219,30 @@ int main(int argc,  char *argv[])
 			 */
 			w = 0;
 			written = 0;
-			while (written < strlen(buffer)) {
-				w = write(clientsd, buffer + written,
-				    strlen(buffer) - written);
-				if (w == -1) {
-					if (errno != EINTR)
-						err(1, "write failed");
+			// Kramer: Replace writing function with tls_write instead?
+			while (written < strlen(buffer))
+			{
+				//w = write(clientsd, buffer + written, strlen(buffer) - written);
+				w = tls_write(clientTLS, buffer + written, strlen(buffer) - written);
+				if (w == -1)
+				{
+					err(1, "write failed");
 				}
-				else
+				else if(w != TLS_WANT_POLLIN && w != TLS_WANT_POLLOUT)
+				{
 					written += w;
+				}
+			}
+			
+			// Bob Beck's libTLS tutorial: Finally you should call tls_close on a tls context 
+			// when it is finished. this does not close the underlying file descriptor, so you 
+			// keep your old code to close the underlying socket when it is done.
+			
+			// Kramer: Closing all client connections that had TLS_WANT_POLLIN and TLS_WANT_POLLOUT?
+			int k = 0;
+			while(i == TLS_WANT_POLLIN || i == TLS_WANT_POLLOUT)
+			{
+				k = tls_close(clientTLS);	
 			}
 			close(clientsd);
 			exit(0);
