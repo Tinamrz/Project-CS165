@@ -65,12 +65,13 @@ int main(int argc,  char *argv[])
 	port = p;
 	//murmur hashing
 	uint32_t hash[4];                // Output for the hash
-	uint32_t seed = 42;              // Seed value for hash
-	MurmurHash3_x86_32(strcat(argv[4],proxyname), strlen(strcat(argv[4],proxyname)), seed, hash);
+	//uint32_t seed = 42;              // Seed value for hash
+	
 	
 	// For the bloom filter we are using the bloom filter library
 	bloom_parameters parameters;
 	parameters.projected_element_count = 30000;  //objects
+	
 	parameters.false_positive_probability = 0.01;   //probability of the false positive
 	// Simple randomizer 
    	parameters.random_seed = 0xA5A5A5A5;
@@ -87,7 +88,9 @@ int main(int argc,  char *argv[])
 	//we need to set up a tls. The proxy acts as a middle-man in-between the server and the client.
 	if ((tls_cfg = tls_config_new()) == NULL)
 		errx(1, "unable to allocate TLS config")
+		
 	if (tls_accept_socket(tls_ctx, &tls_cctx, clientsd) == -1)
+		
 	errx(1, "Acception by TLS failed %s", tls_error(tls_ctx));
 	else {
 	do {
@@ -99,11 +102,41 @@ int main(int argc,  char *argv[])
 	//Now it is time to get the object from the client.
 	ssize_t file;
 	file = tls_read(tls_cctx, buffer,200);
+	
 	//Now that we have the file name, it is time to search the bloom filter
 	//for inserting the Bloom values
+	
+	if(bloom_query(bloom, buffer)){
+		
+	printf("sending contents of %s to the client\n", buffer);
+	boolCache = 1;
+		
 	filter.insert(bloom,buffer);
+		
+	strncpy(buffer,buffer,sizeof(buffer));
 	if(boolCache == 1){
-	printf("IN CACHE Proxy sent: contents of %s\n\n",buffer);
-	}  
-
+		
+	printf("Found it in CACHE! Proxy sent: contents of %s\n\n",buffer);
+	} 
+	else{
+		
+		
+	// Now to connect to server to get the object
+	if((tls_scfg = tls_config_new()) == NULL)
+				errx(1 ," unable to allocate TLS config");
+		
+	 memset(&server_sa, 0, sizeof(server_sa));
+			server_sa.sin_family = AF_INET;
+			server_sa.sin_port = htons(serverport);
+			server_sa.sin_addr.s_addr = htonl(INADDR_ANY);
+			ssd=socket(AF_INET,SOCK_STREAM,0);  
+		
+	if(connect(ssd, (struct sockaddr*)&server_sa, sizeof(server_sa)) == - 1)
+	 errx(1, "server connection failed");
+	 
+	// Now that connected to the server, we read the file
+	printf("reading the file from the server")
+	file = tls_read(tls_sctx, buffer,200);
+	close(clientsd);}
+	}
 	
